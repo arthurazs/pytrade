@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "pytrade"
+version = "0.1.0"
+description = ""
+authors = ["Arthur Zopellaro <arthurazs@id.uff.br>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+[tool.poetry.group.dev.dependencies]
+black = "^22.10.0"
+flake8 = "^5.0.4"
+isort = "^5.10.1"
+mypy = "^0.982"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.isort]
+profile = "black"
+
+[tool.mypy]
+strict = true
+show_error_codes = true
+enable_error_code = "ignore-without-code"
+
+[tool.poetry.scripts]
+rc = 'pytrade.reader:run'
