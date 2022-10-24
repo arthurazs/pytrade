@@ -1,9 +1,11 @@
 import datetime as dt
 import decimal as dec
+from enum import Enum
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from os import PathLike
+    from typing import Sequence
 
 
 class Analog:
@@ -24,7 +26,7 @@ class Analog:
     )
 
     def __init__(
-        self,
+        self: "Analog",
         identifier: str,
         phase: str,
         circuit_component: str,
@@ -52,7 +54,7 @@ class Analog:
         self._secondary = dec.Decimal(secondary)
         self._is_primary = primary_or_secondary.strip().lower() == "p"
 
-    def __str__(self) -> str:
+    def __str__(self: "Analog") -> str:
         return (
             f"{self._identifier} ({self._phase}, {self._circuit_component})\n"
             f"Unit: {self._unit} ({self._multiplier} * x + {self._offset})\n"
@@ -61,7 +63,7 @@ class Analog:
             f"Skew: {self._skew} us"
         )
 
-    def __repr__(self) -> str:
+    def __repr__(self: "Analog") -> str:
         return self._identifier
 
 
@@ -69,20 +71,26 @@ class Digital:
 
     __slots__ = ("_identifier", "_phase", "_circuit_component", "_state")
 
-    def __init__(self, identifier: str, phase: str, circuit_component: str, state: str):
+    def __init__(
+        self: "Digital", identifier: str, phase: str, circuit_component: str, state: str
+    ) -> None:
         self._identifier = identifier
         self._phase = phase
         self._circuit_component = circuit_component
         self._state = int(state)
 
-    def __str__(self) -> str:
+    def __str__(self: "Digital") -> str:
         return (
             f"{self._identifier} ({self._phase}, {self._circuit_component})\n"
             f"State: {self._state}"
         )
 
-    def __repr__(self) -> str:
+    def __repr__(self: "Digital") -> str:
         return self._identifier
+
+
+class DataType(Enum):
+    ASCII = "ASCII"
 
 
 class Configuration:
@@ -107,16 +115,16 @@ class Configuration:
     )
 
     def __init__(
-        self,
+        self: "Configuration",
         station_name: str,
         identification: str,
         revision: str,
         total_channels: str,
         total_analog: int,
         total_digital: int,
-        analogs_order: list[str],
+        analogs_order: "Sequence[str]",
         analogs: dict[str, "Analog"],
-        digitals_order: list[str],
+        digitals_order: "Sequence[str]",
         digitals: dict[str, "Digital"],
         frequency: str,
         sample_rates: str,
@@ -154,34 +162,38 @@ class Configuration:
         self._trigger_datetime = dt.datetime.strptime(
             trigger_datetime.strip(), "%d/%m/%Y,%H:%M:%S.%f"
         )
-        self._data_file_type = data_file_type
+        self._data_file_type = DataType(data_file_type)
         self._multiplication_factor = dec.Decimal(multiplication_factor)
 
     @property
-    def data_file_type(self) -> str:
+    def data_file_type(self: "Configuration") -> DataType:
         return self._data_file_type
 
     @property
-    def total_channels(self) -> int:
+    def total_channels(self: "Configuration") -> int:
         return self._total_channels
 
     @property
-    def total_analog(self) -> int:
+    def total_analog(self: "Configuration") -> int:
         return self._total_analog
 
     @property
-    def total_digital(self) -> int:
+    def total_digital(self: "Configuration") -> int:
         return self._total_digital
 
     @property
-    def analogs_order(self) -> list[str]:
+    def analogs_order(self: "Configuration") -> "Sequence[str]":
         return self._analogs_order
 
     @property
-    def last_sample(self) -> int:
+    def digitals_order(self: "Configuration") -> "Sequence[str]":
+        return self._digitals_order
+
+    @property
+    def last_sample(self: "Configuration") -> int:
         return self._last_sample
 
-    def __str__(self) -> str:
+    def __str__(self: "Configuration") -> str:
         return (
             f"Station name: {self._station_name}\n"
             f"Recording device identification: {self._identification}\n"
@@ -200,11 +212,11 @@ class Configuration:
             f"the time differential: {self._multiplication_factor}"
         )
 
-    def __repr__(self) -> str:
+    def __repr__(self: "Configuration") -> str:
         return self._station_name + "_" + self._identification
 
     @classmethod
-    def load(cls, path: "PathLike[str]") -> "Configuration":
+    def load(cls: type["Configuration"], path: "PathLike[str]") -> "Configuration":
         with open(path, "r") as cfg_file:
             station_name, rec_dev_id, rev_year = cfg_file.readline().split(",")
             tt, ta_string, td_string = cfg_file.readline().split(",")

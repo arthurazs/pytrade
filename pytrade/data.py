@@ -1,33 +1,82 @@
 import decimal as dec
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NamedTuple
 
 if TYPE_CHECKING:
     from os import PathLike
+    from typing import Iterator, Sequence
 
     from pytrade.configuration import Configuration
 
 
-class Analogs:
+class Sample(NamedTuple):
+    timestamp: int
+    analogs: "Sequence[dec.Decimal]"
+    digitals: "Sequence[dec.Decimal]"
+
+
+class ChannelsSample(NamedTuple):
+    timestamp: int
+    channels: "Sequence[dec.Decimal]"
+
+
+class Channels:
+    __slots__ = ()
+    _timestamp = 0
+    _channels: dict[str, dec.Decimal] = {}
+
+    @property
+    def samples(self: "Channels") -> "Sequence[dec.Decimal]":
+        return tuple(self._channels.values())
+
+    @property
+    def timestamp(self: "Channels") -> int:
+        return self._timestamp
+
+    def __getitem__(self: "Channels", item: str) -> dec.Decimal:
+        return self._channels[item]
+
+    def __str__(self: "Channels") -> str:
+        return repr(self)
+
+    def __repr__(self: "Channels") -> str:
+        return f"{self.timestamp}: {self.samples}"
+
+
+class Digitals(Channels):
     def __init__(
-        self, timestamp: str, channels: list[str], cfg_analogs: list[str]
+        self: "Digitals",
+        timestamp: str,
+        channels: "Sequence[str]",
+        cfg_total_analog: int,
+        cfg_digitals_order: "Sequence[str]",
     ) -> None:
         self._timestamp = int(timestamp)
         self._channels = {}
-        for index, channel in enumerate(cfg_analogs):
-            self._channels[channel] = dec.Decimal(channels[index])
+        for index, channel in enumerate(cfg_digitals_order):
+            self._channels[channel] = dec.Decimal(channels[cfg_total_analog + index])
 
-    def __str__(self) -> str:
-        return f"{self._timestamp}: {self._channels}"
+
+class Analogs(Channels):
+    def __init__(
+        self: "Analogs",
+        timestamp: str,
+        channels: "Sequence[str]",
+        cfg_analogs_order: "Sequence[str]",
+    ) -> None:
+        self._timestamp = int(timestamp)
+        self._channels = {}
+        for index, channel in enumerate(cfg_analogs_order):
+            self._channels[channel] = dec.Decimal(channels[index])
 
 
 class Data:
     __slots__ = ("_timestamps", "_analog_samples", "_digital_samples", "_cfg")
 
     def __init__(
-        self,
-        timestamps: list[int],
-        analog_samples: list["Analogs"],
-        digital_samples: list[list[str]],
+        self: "Data",
+        timestamps: "Sequence[int]",
+        analog_samples: "Sequence[Analogs]",
+        digital_samples: "Sequence[Digitals]",
         cfg: "Configuration",
     ) -> None:
         self._timestamps = timestamps
@@ -35,7 +84,55 @@ class Data:
         self._digital_samples = digital_samples
         self._cfg = cfg
 
-    def __str__(self) -> str:
+    def __str__(self: "Data") -> str:
+        string = "Analog Samples:\n"
+        for analog in self._analog_samples:
+            string += f"\t{analog.timestamp}: {analog.samples}\n"
+        string += "Digital Samples:\n"
+        for digital in self._digital_samples:
+            string += f"\t{digital.timestamp}: {digital.samples}\n"
+        return string
+
+    def get_samples(self: "Data") -> "Iterator[Sample]":
+        for count, (analogs, digitals) in enumerate(
+            zip(self._analog_samples, self._digital_samples)
+        ):
+            yield Sample(analogs.timestamp, analogs.samples, digitals.samples)
+            if count > 10:
+                break
+
+    @staticmethod
+    def _get_samples(
+        all_samples: "Sequence[Channels]",
+    ) -> "Iterator[tuple[int, Sequence[dec.Decimal]]]":
+        for samples in all_samples:
+            yield samples.timestamp, samples.samples
+
+    @staticmethod
+    def _get_samples_by(
+        item: str, all_samples: "Sequence[Channels]"
+    ) -> "Iterator[tuple[int, dec.Decimal]]":
+        for sample in all_samples:
+            yield sample.timestamp, sample[item]
+
+    def get_analogs(self: "Data") -> "Iterator[tuple[int, Sequence[dec.Decimal]]]":
+        for timestamp, samples in self._get_samples(self._analog_samples):
+            yield timestamp, samples
+
+    def get_analogs_by(self: "Data", item: str) -> "Iterator[tuple[int, dec.Decimal]]":
+        for timestamp, sample in self._get_samples_by(item, self._analog_samples):
+            yield timestamp, sample
+
+    def get_digitals(self: "Data") -> "Iterator[tuple[int, Sequence[dec.Decimal]]]":
+        for timestamp, samples in self._get_samples(self._digital_samples):
+            yield timestamp, samples
+
+    def get_digitals_by(self: "Data", item: str) -> "Iterator[tuple[int, dec.Decimal]]":
+        for timestamp, sample in self._get_samples_by(item, self._digital_samples):
+            yield timestamp, sample
+
+    @property
+    def summary(self: "Data") -> str:
         return (
             f"ID: {repr(self._cfg)}\n"
             f"First timestamp: {self._timestamps[0]}\n"
@@ -43,18 +140,23 @@ class Data:
             f"Analog samples: {len(self._analog_samples)} * {self._cfg.total_analog}"
             f" = {len(self._analog_samples) * self._cfg.total_analog}\n"
             f"Digital samples: {len(self._digital_samples)} * {self._cfg.total_digital}"
-            f" = {len(self._digital_samples * self._cfg.total_digital)}\n"
+            f" = {len(self._digital_samples) * self._cfg.total_digital}\n"
         )
 
-    def __repr__(self) -> str:
-        return ""
-
     @classmethod
-    def load(cls, path: "PathLike[str]", cfg: "Configuration") -> "Data":
-        if cfg.data_file_type != "ASCII":
-            raise NotImplementedError(
-                "Reading non-ASCII .dat files not implemented yet"
-            )
+    def load(cls: type["Data"], path: "PathLike[str]", cfg: "Configuration") -> "Data":
+        """Loads .dat file. Expects a .cfg object.
+
+        Args:
+            path: Path to the .dat file.
+            cfg: Loaded .cfg file.
+
+        Returns:
+            Loaded .dat object.
+
+        Raises:
+            ValueError: If the number of channels in .dat differs from .cfg.
+        """
         with open(path, "r") as dat_file:
             timestamps = []
             analog_samples = []
@@ -69,6 +171,7 @@ class Data:
 
                 timestamps.append(int(timestamp))
                 analog_samples.append(Analogs(timestamp, channels, cfg.analogs_order))
-                # TODO Create Digitals class
-                digital_samples.append(channels[cfg.total_analog :])
+                digital_samples.append(
+                    Digitals(timestamp, channels, cfg.total_analog, cfg.digitals_order)
+                )
             return cls(timestamps, analog_samples, digital_samples, cfg)
