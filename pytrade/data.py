@@ -15,8 +15,13 @@ class Sample(NamedTuple):
 
 
 class ChannelsSample(NamedTuple):
-    timestamp: int
-    channels: "Sequence[dec.Decimal]"
+    timestamp: dec.Decimal
+    samples: "Sequence[dec.Decimal]"
+
+
+class ChannelSample(NamedTuple):
+    timestamp: dec.Decimal
+    sample: dec.Decimal
 
 
 class Channels:
@@ -139,14 +144,28 @@ class Data:
         for timestamp, sample in self._get_raw_samples_by(item, self._analog_samples):
             yield timestamp, sample
 
-    def get_analogs_by(
-        self: "Data", item: str
-    ) -> "Iterator[tuple[dec.Decimal, dec.Decimal]]":
+    def get_analogs(
+        self: "Data", channels: "Sequence[str]"
+    ) -> "Iterator[Sequence[dec.Decimal]]":
+        factor = self.cfg.multiplication_factor
+        in_us = self.cfg.in_microseconds
+        for samples in self._analog_samples:
+            selected_samples: list[dec.Decimal] = []
+            # TODO Add support to get ALL channels
+            for channel in channels:
+                convert = self.cfg.analogs[channel].convert
+                selected_samples.append(convert(samples[channel]))
+            # TODO Improve return typing
+            yield samples.convert_timestamp(factor, in_us), *selected_samples
+
+    def get_analogs_by(self: "Data", item: str) -> "Iterator[ChannelSample]":
         convert = self.cfg.analogs[item].convert
         factor = self.cfg.multiplication_factor
         in_us = self.cfg.in_microseconds
         for sample in self._analog_samples:
-            yield sample.convert_timestamp(factor, in_us), convert(sample[item])
+            yield ChannelSample(
+                sample.convert_timestamp(factor, in_us), convert(sample[item])
+            )
 
     def get_digitals_by(
         self: "Data", item: str

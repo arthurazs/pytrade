@@ -123,11 +123,28 @@ def plot(dat: Data) -> None:
     plt.show()
 
 
+def to_csv(dat: "Data") -> None:
+    from time import time
+    start = time()
+    import pandas as pd
+
+    current_channels = tuple(f"I{phase}W" for phase in ("A", "B", "C"))
+    voltage_channels = tuple(f"V{phase}Y" for phase in ("A", "B", "C"))
+    channels = current_channels + voltage_channels
+
+    print('Building dataframe...')
+    df = pd.DataFrame(dat.get_analogs(channels), columns=["ms", *channels])
+    print('Saving to .csv file...')
+    df.to_csv(filename.with_suffix('.csv'))
+    print(f'Done in {(time() - start) * 1_000:.3f} ms...')
+
+
 def run() -> int:
     cfg = Configuration.load(cfg_path)
     dat = Data.load(dat_path, cfg)
     examples(dat)
     plot(dat)
+    to_csv(dat)
     return 0
 
 
