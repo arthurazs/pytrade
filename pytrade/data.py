@@ -32,6 +32,12 @@ class Channels:
     def timestamp(self: "Channels") -> int:
         return self._timestamp
 
+    def convert_timestamp(
+        self: "Channels", multiplication_factor: dec.Decimal, in_microseconds: bool
+    ) -> dec.Decimal:
+        fraction: dec.Decimal = 1_000 * (1_000**in_microseconds)
+        return (self._timestamp * multiplication_factor) / fraction
+
     def __getitem__(self: "Channels", item: str) -> dec.Decimal:
         return self._channels[item]
 
@@ -84,6 +90,14 @@ class Data:
         self._digital_samples = digital_samples
         self._cfg = cfg
 
+    @property
+    def cfg(self: "Data") -> "Configuration":
+        return self._cfg
+
+    @property
+    def timestamps(self: "Data") -> "Sequence[int]":
+        return self._timestamps
+
     def __str__(self: "Data") -> str:
         string = "Analog Samples:\n"
         for analog in self._analog_samples:
@@ -102,33 +116,54 @@ class Data:
                 break
 
     @staticmethod
-    def _get_samples(
+    def _get_raw_samples(
         all_samples: "Sequence[Channels]",
     ) -> "Iterator[tuple[int, Sequence[dec.Decimal]]]":
         for samples in all_samples:
             yield samples.timestamp, samples.samples
 
     @staticmethod
-    def _get_samples_by(
+    def _get_raw_samples_by(
         item: str, all_samples: "Sequence[Channels]"
     ) -> "Iterator[tuple[int, dec.Decimal]]":
         for sample in all_samples:
             yield sample.timestamp, sample[item]
 
-    def get_analogs(self: "Data") -> "Iterator[tuple[int, Sequence[dec.Decimal]]]":
-        for timestamp, samples in self._get_samples(self._analog_samples):
+    def get_raw_analogs(self: "Data") -> "Iterator[tuple[int, Sequence[dec.Decimal]]]":
+        for timestamp, samples in self._get_raw_samples(self._analog_samples):
             yield timestamp, samples
 
-    def get_analogs_by(self: "Data", item: str) -> "Iterator[tuple[int, dec.Decimal]]":
-        for timestamp, sample in self._get_samples_by(item, self._analog_samples):
+    def get_raw_analogs_by(
+        self: "Data", item: str
+    ) -> "Iterator[tuple[int, dec.Decimal]]":
+        for timestamp, sample in self._get_raw_samples_by(item, self._analog_samples):
             yield timestamp, sample
 
-    def get_digitals(self: "Data") -> "Iterator[tuple[int, Sequence[dec.Decimal]]]":
-        for timestamp, samples in self._get_samples(self._digital_samples):
+    def get_analogs_by(
+        self: "Data", item: str
+    ) -> "Iterator[tuple[dec.Decimal, dec.Decimal]]":
+        convert = self.cfg.analogs[item].convert
+        factor = self.cfg.multiplication_factor
+        in_us = self.cfg.in_microseconds
+        for sample in self._analog_samples:
+            yield sample.convert_timestamp(factor, in_us), convert(sample[item])
+
+    def get_digitals_by(
+        self: "Data", item: str
+    ) -> "Iterator[tuple[dec.Decimal, dec.Decimal]]":
+        factor = self.cfg.multiplication_factor
+        in_us = self.cfg.in_microseconds
+        for sample in self._digital_samples:
+            yield sample.convert_timestamp(factor, in_us), sample[item]
+
+    def get_raw_digitals(self: "Data") -> "Iterator[tuple[int, Sequence[dec.Decimal]]]":
+        for timestamp, samples in self._get_raw_samples(self._digital_samples):
             yield timestamp, samples
 
-    def get_digitals_by(self: "Data", item: str) -> "Iterator[tuple[int, dec.Decimal]]":
-        for timestamp, sample in self._get_samples_by(item, self._digital_samples):
+    def get_raw_digitals_by(
+        self: "Data", item: str
+    ) -> "Iterator[tuple[int, dec.Decimal]]":
+        for timestamp, sample in self._get_raw_samples_by(item, self._digital_samples):
             yield timestamp, sample
 
     @property

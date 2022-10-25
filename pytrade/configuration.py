@@ -66,6 +66,17 @@ class Analog:
     def __repr__(self: "Analog") -> str:
         return self._identifier
 
+    def convert(self: "Analog", x: dec.Decimal) -> dec.Decimal:
+        return (self._multiplier * x) + self._offset
+
+    @property
+    def unit(self: "Analog") -> str:
+        return self._unit
+
+    @property
+    def skew(self: "Analog") -> dec.Decimal:
+        return self._skew
+
 
 class Digital:
 
@@ -108,6 +119,7 @@ class Configuration:
         "_frequency",
         "_sample_rate",
         "_last_sample",
+        "_in_microseconds",
         "_start_datetime",
         "_trigger_datetime",
         "_data_file_type",
@@ -156,6 +168,7 @@ class Configuration:
             )
         self._sample_rate = dec.Decimal(sample_rate)
         self._last_sample = int(last_sample)
+        self._in_microseconds = len(start_datetime.split(".")[-1].strip()) > 6
         self._start_datetime = dt.datetime.strptime(
             start_datetime.strip(), "%d/%m/%Y,%H:%M:%S.%f"
         )
@@ -168,6 +181,14 @@ class Configuration:
     @property
     def data_file_type(self: "Configuration") -> DataType:
         return self._data_file_type
+
+    @property
+    def in_microseconds(self: "Configuration") -> bool:
+        return self._in_microseconds
+
+    @property
+    def multiplication_factor(self: "Configuration") -> dec.Decimal:
+        return self._multiplication_factor
 
     @property
     def total_channels(self: "Configuration") -> int:
@@ -186,8 +207,16 @@ class Configuration:
         return self._analogs_order
 
     @property
+    def analogs(self: "Configuration") -> dict[str, "Analog"]:
+        return self._analogs
+
+    @property
     def digitals_order(self: "Configuration") -> "Sequence[str]":
         return self._digitals_order
+
+    @property
+    def digitals(self: "Configuration") -> dict[str, "Digital"]:
+        return self._digitals
 
     @property
     def last_sample(self: "Configuration") -> int:
