@@ -7,6 +7,11 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
+matplotlib = { version = "3.5.3", optional = true }
+seaborn = { version = "^0.12.1", optional = true }
+
+[tool.poetry.extras]
+plot = ["matplotlib", "seaborn"]
 
 [tool.poetry.group.dev.dependencies]
 black = "^22.10.0"
@@ -26,7 +31,6 @@ flake8-annotations = "^2.9.1"
 flake8-new-union-types = "^0.4.1"
 flake8-type-checking = "^2.2.0"
 flake8-bandit = "^4.1.1"
-
 
 [build-system]
 requires = ["poetry-core"]
