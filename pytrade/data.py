@@ -167,6 +167,19 @@ class Data:
                 sample.convert_timestamp(factor, in_us), convert(sample[item])
             )
 
+    def get_digitals(
+        self: "Data", channels: "Sequence[str]"
+    ) -> "Iterator[Sequence[bool]]":
+        factor = self.cfg.multiplication_factor
+        in_us = self.cfg.in_microseconds
+        for samples in self._digital_samples:
+            selected_samples: list[bool] = []
+            # TODO Add support to get ALL channels
+            for channel in channels:
+                selected_samples.append(bool(samples[channel]))
+            # TODO Improve return typing
+            yield samples.convert_timestamp(factor, in_us), *selected_samples
+
     def get_digitals_by(
         self: "Data", item: str
     ) -> "Iterator[tuple[dec.Decimal, dec.Decimal]]":
