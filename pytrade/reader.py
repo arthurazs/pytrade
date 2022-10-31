@@ -4,7 +4,7 @@ from pytrade.configuration import Configuration
 from pytrade.data import Data
 
 filepath = Path("data")
-filename = filepath / "example1"
+filename = filepath / "1999sub0"
 cfg_path = filename.with_suffix(".CFG")
 dat_path = filename.with_suffix(".DAT")
 
@@ -123,8 +123,9 @@ def plot(dat: Data) -> None:
     plt.show()
 
 
-def to_csv(dat: "Data") -> None:
+def to_csv_analog(dat: "Data") -> None:
     from time import time
+
     start = time()
     import pandas as pd
 
@@ -132,19 +133,56 @@ def to_csv(dat: "Data") -> None:
     voltage_channels = tuple(f"V{phase}Y" for phase in ("A", "B", "C"))
     channels = current_channels + voltage_channels
 
-    print('Building dataframe...')
-    df = pd.DataFrame(dat.get_analogs(channels), columns=["ms", *channels])
-    print('Saving to .csv file...')
-    df.to_csv(filename.with_suffix('.csv'))
-    print(f'Done in {(time() - start) * 1_000:.3f} ms...')
+    print("Building dataframe...")
+    df = pd.DataFrame(dat.get_analogs(channels), columns=["us", *channels])
+
+    for channel in channels:
+        df[channel] *= 1_000
+
+    for channel in voltage_channels:
+        df[channel] *= 100
+
+    df["us"] = df["us"] * 1_000
+
+    # for channel in ("us",) + channels:
+    for channel in ("us",) + channels:
+        df[channel] = df[channel].astype(int)
+    print("Saving to .csv file...")
+    new_file = filename.parent / (filename.name + "_analog")
+    # df.drop("us", axis=1).iloc[::2].to_csv(new_file.with_suffix(".csv"), index=False)
+    df.drop("us", axis=1).to_csv(new_file.with_suffix(".csv"), index=False)
+    # df.to_csv(new_file.with_suffix(".csv"), index=False)
+    print(f"Done in {(time() - start) * 1_000:.3f} ms...")
+
+
+def to_csv_digital(dat: "Data") -> None:
+    from time import time
+
+    start = time()
+    import pandas as pd
+
+    channels = ("TRIP", "50P1", "VB001")
+
+    print("Building dataframe...")
+    df = pd.DataFrame(dat.get_digitals(channels), columns=["us", *channels])
+    df["us"] = df["us"] * 1_000
+
+    # only save different rows
+    df = df[df.groupby('TRIP')['50P1'].diff().ne(0)]
+
+    print("Saving to .csv file...")
+    new_file = filename.parent / (filename.name + "_digital")
+    df.to_csv(new_file.with_suffix(".csv"), index=False)
+    print(f"Done in {(time() - start) * 1_000:.3f} ms...")
 
 
 def run() -> int:
     cfg = Configuration.load(cfg_path)
     dat = Data.load(dat_path, cfg)
-    examples(dat)
-    plot(dat)
-    to_csv(dat)
+    # examples(dat)
+    # to_csv_analog(dat)
+    # plot(dat)
+    to_csv_digital(dat)
     return 0
 
 
