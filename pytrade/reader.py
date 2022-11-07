@@ -168,7 +168,7 @@ def to_csv_digital(dat: "Data") -> None:
     df["us"] = df["us"] * 1_000
 
     # only save different rows
-    df = df[df.groupby('TRIP')['50P1'].diff().ne(0)]
+    df = df[df.groupby("TRIP")["50P1"].diff().ne(0)]
 
     print("Saving to .csv file...")
     new_file = filename.parent / (filename.name + "_digital")
