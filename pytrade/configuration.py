@@ -179,6 +179,14 @@ class Configuration:
         self._multiplication_factor = dec.Decimal(multiplication_factor)
 
     @property
+    def start_datetime(self: "Configuration") -> dt.datetime:
+        return self._start_datetime
+
+    @property
+    def trigger_datetime(self: "Configuration") -> dt.datetime:
+        return self._trigger_datetime
+
+    @property
     def data_file_type(self: "Configuration") -> DataType:
         return self._data_file_type
 
