@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pytrade"
-version = "0.1.0"
+version = "0.1.1"
 description = ""
 authors = ["Arthur Zopellaro <arthurazs@id.uff.br>"]
 readme = "README.md"
