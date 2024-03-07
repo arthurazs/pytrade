@@ -232,6 +232,10 @@ class Configuration:
         return self._digitals
 
     @property
+    def frequency(self: "Configuration") -> dec.Decimal:
+        return self._frequency
+
+    @property
     def last_sample(self: "Configuration") -> int:
         return self._last_sample
 
