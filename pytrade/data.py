@@ -199,7 +199,7 @@ class Data:
     @property
     def summary(self: "Data") -> str:
         return (
-            f"ID: {repr(self._cfg)}\n"
+            f"ID: {self._cfg.id}\n"
             f"First timestamp: {self._timestamps[0]}\n"
             f"Last timestamp: {self._timestamps[-1]}\n"
             f"Analog samples: {len(self._analog_samples)} * {self._cfg.total_analog}"

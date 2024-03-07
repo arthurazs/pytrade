@@ -254,7 +254,8 @@ class Configuration:
             f"the time differential: {self._multiplication_factor}"
         )
 
-    def __repr__(self: "Configuration") -> str:
+    @property
+    def id(self: "Configuration") -> str:
         return self._station_name + "_" + self._identification
 
     @classmethod
