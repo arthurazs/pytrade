@@ -117,8 +117,6 @@ class Data:
             zip(self._analog_samples, self._digital_samples)
         ):
             yield Sample(analogs.timestamp, analogs.samples, digitals.samples)
-            if count > 10:
-                break
 
     @staticmethod
     def _get_raw_samples(
