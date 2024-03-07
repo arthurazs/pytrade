@@ -1,48 +1,47 @@
-[tool.poetry]
+[project]
 name = "pytrade"
-version = "0.1.1"
-description = ""
-authors = ["Arthur Zopellaro <arthurazs@id.uff.br>"]
+version = "0.1.2"
+description = "Python COMTRADE reader"
+authors = [{ name = "Arthur Zopellaro", email = "github@zope.me" }]
 readme = "README.md"
+requires-python = ">=3.10"
 
-[tool.poetry.dependencies]
-python = "^3.10"
-matplotlib = { version = "^3", optional = true }
-seaborn = { version = "^0", optional = true }
+[tool.setuptools]
+packages = ["pytrade"]
 
-[tool.poetry.extras]
-plot = ["matplotlib", "seaborn"]
+[project.optional-dependencies]
+plot = [
+  "seaborn==0.13.2",
+]
+dev = [
+  "ruff==0.3.1",
+  "mypy==1.8.0",
+]
 
-[tool.poetry.group.dev.dependencies]
-black = "^22.10.0"
-isort = "^5.10.1"
-mypy = "^0.982"
-flake8 = "^5.0.4"
-flake8-black = "^0.3.3"
-flake8-bugbear = "^22.9.23"
-flake8-simplify = "^0.19.3"
-flake8-builtins = "^2.0.0"
-pep8-naming = "^0.13.2"
-flake8-isort = "^5.0.0"
-flake8-noqa = "^1.2.9"
-flake8-docstrings = "^1.6.0"
-darglint = "^1.8.1"
-flake8-annotations = "^2.9.1"
-flake8-new-union-types = "^0.4.1"
-flake8-type-checking = "^2.2.0"
-flake8-bandit = "^4.1.1"
+[project.urls]
+"Homepage" = "https://github.com/arthurazs/pytrade"
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
 
-[tool.isort]
-profile = "black"
+[tool.ruff]
+select = [
+  "F", "E", "W", "C90", "I", "N", "D", "UP", "YTT", "ANN", "ASYNC", "S", "BLE", "FBT", "B", "A", "COM", "C4", "DTZ",
+  "T10", "DJ", "EM", "EXE", "FA", "ISC", "ICN", "G", "INP", "PIE", "T20", "PYI", "PT", "Q", "RSE", "RET", "SLF",
+  "SLOT", "SIM", "TID", "TCH", "INT", "ARG", "PTH", "TD", "FIX", "ERA", "PD", "PGH", "PL", "TRY", "FLY", "NPY", "AIR",
+  "PERF", "RUF",
+]
+ignore = ["D203", "D213", "FA102"]
+extend-ignore = ["D", "FIX002", "TD003"]
+line-length = 120
 
 [tool.mypy]
 strict = true
 show_error_codes = true
 enable_error_code = "ignore-without-code"
+exclude = ["build", ".venv"]
 
-[tool.poetry.scripts]
+[project.scripts]
 rc = 'pytrade.reader:run'
+
