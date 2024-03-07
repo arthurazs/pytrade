@@ -5,3 +5,8 @@
 __pycache__
 .venv
 *.egg-info
+
+# Plot
+*.pdf
+*.csv
+

@@ -95,7 +95,7 @@ def plot(dat: Data) -> None:
         palette=palette,
     )
 
-    fig, axes = plt.subplots(
+    _, axes = plt.subplots(
         3, figsize=(7, 6), gridspec_kw={"height_ratios": [3, 3, 1]}
     )
 
@@ -119,8 +119,8 @@ def plot(dat: Data) -> None:
     ax.set_yticklabels(["False", "True"])
 
     plt.subplots_adjust(left=0.12, right=0.99, top=0.99, bottom=0.1, hspace=0.01)
-    # plt.savefig('figura.pdf', dpi=100, bbox_inches='tight')
-    plt.show()
+    plt.savefig('figura.pdf', dpi=100, bbox_inches='tight')
+    # plt.show()
 
 
 def to_csv_analog(dat: "Data") -> None:
@@ -181,8 +181,8 @@ def run() -> int:
     dat = Data.load(dat_path, cfg)
     # examples(dat)
     # to_csv_analog(dat)
-    # plot(dat)
-    to_csv_digital(dat)
+    plot(dat)
+    # to_csv_digital(dat)
     return 0
 
 

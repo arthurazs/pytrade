@@ -10,22 +10,26 @@ Python COMTRADE reader for revision 1999.
 
 ## Quickstart
 
-pytrade is meant to be used as a lib. The `poetry run rc` below is a mere example to show you what it does.
+pytrade is meant to be used as a lib. The `rc` below is a mere example to show you what it does.
+
+Tested on debian.
 
 ```bash
 git clone https://github.com/arthurazs/pytrade
 cd pytrade
 
+# venv
+python -m venv .venv
+. .venv/bin/activate
+
 # requirements
-pip3.10 install poetry
-poetry install --without dev          # for regular pytrade
-poetry install --without dev -E plot  # for plotting the examples
+pip install .[dev,plot]
 
 # if you get an error running the plots, try installing tk
-apt install python3.10-tk
+sudo apt install python3.10-tk
 
 # running the examples
-poetry run rc
+rc
 ```
 
-See [reader.py](pytrade/reader.py) for the code ran.
+See [reader.py](pytrade/reader.py) for the example code.
