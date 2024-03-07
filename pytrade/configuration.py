@@ -57,17 +57,22 @@ class Analog:
     def __str__(self: "Analog") -> str:
         return (
             f"{self._identifier} ({self._phase}, {self._circuit_component})\n"
-            f"Unit: {self._unit} ({self._multiplier} * x + {self._offset})\n"
-            f"Primary: {self._is_primary} ({self._min} ~ {self._max})\n"
-            f"\tPrimary: {self._primary}\n\tSecondary: {self._secondary}\n"
-            f"Skew: {self._skew} us"
+            f"Unit:\t{self._unit} ({self._multiplier} * x + {self._offset})\n"
+            f"Primary: \t{self._is_primary} ({self._min} ~ {self._max})\n"
+            f"\t\tPrimary: {self._primary}\n\t\tSecondary: {self._secondary}\n"
+            f"Skew:\t{self._skew} us"
         )
-
-    def __repr__(self: "Analog") -> str:
-        return self._identifier
 
     def convert(self: "Analog", x: dec.Decimal) -> dec.Decimal:
         return (self._multiplier * x) + self._offset
+
+    @property
+    def id(self: "Analog") -> str:
+        return self._identifier
+
+    @property
+    def phase(self: "Analog") -> str:
+        return self._phase
 
     @property
     def unit(self: "Analog") -> str:
