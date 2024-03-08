@@ -67,10 +67,6 @@ class Analog:
         return (self._multiplier * x) + self._offset
 
     @property
-    def id(self: "Analog") -> str:
-        return self._identifier
-
-    @property
     def phase(self: "Analog") -> str:
         return self._phase
 
@@ -82,6 +78,17 @@ class Analog:
     def skew(self: "Analog") -> dec.Decimal:
         return self._skew
 
+    @property
+    def primary(self: "Analog") -> dec.Decimal:
+        return self._primary
+
+    @property
+    def secondary(self: "Analog") -> dec.Decimal:
+        return self._secondary
+
+    @property
+    def is_primary(self: "Analog") -> bool:
+        return self._is_primary
 
 class Digital:
 
