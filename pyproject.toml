@@ -1,6 +1,6 @@
 [project]
 name = "pytrade"
-version = "0.1.8"
+version = "0.1.9"
 description = "Python COMTRADE reader"
 authors = [{ name = "Arthur Zopellaro", email = "github@zope.me" }]
 readme = "README.md"
@@ -14,7 +14,7 @@ plot = [
   "seaborn==0.13.2",
 ]
 dev = [
-  "ruff==0.3.1",
+  "ruff==0.3.2",
   "mypy==1.8.0",
 ]
 
@@ -26,15 +26,12 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [tool.ruff]
-select = [
-  "F", "E", "W", "C90", "I", "N", "D", "UP", "YTT", "ANN", "ASYNC", "S", "BLE", "FBT", "B", "A", "COM", "C4", "DTZ",
-  "T10", "DJ", "EM", "EXE", "FA", "ISC", "ICN", "G", "INP", "PIE", "T20", "PYI", "PT", "Q", "RSE", "RET", "SLF",
-  "SLOT", "SIM", "TID", "TCH", "INT", "ARG", "PTH", "TD", "FIX", "ERA", "PD", "PGH", "PL", "TRY", "FLY", "NPY", "AIR",
-  "PERF", "RUF",
-]
-ignore = ["D203", "D213", "FA102"]
-extend-ignore = ["D", "FIX002", "TD003"]
 line-length = 120
+
+[tool.ruff.lint]
+select = ["ALL"]
+pydocstyle.convention = "google"
+# ignore = ["D102", "D105", "D107", "D101", "TD003", "FIX002", "D100"]
 
 [tool.mypy]
 strict = true
@@ -43,5 +40,5 @@ enable_error_code = "ignore-without-code"
 exclude = ["build", ".venv"]
 
 [project.scripts]
-rc = 'pytrade.reader:run'
+rc = 'pytrade.reader:main'
 

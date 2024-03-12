@@ -4,7 +4,7 @@ from enum import Enum
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from os import PathLike
+    from pathlib import Path
     from typing import Sequence
 
 
@@ -94,9 +94,7 @@ class Digital:
 
     __slots__ = ("_identifier", "_phase", "_circuit_component", "_state")
 
-    def __init__(
-        self: "Digital", identifier: str, phase: str, circuit_component: str, state: str
-    ) -> None:
+    def __init__(self: "Digital", identifier: str, phase: str, circuit_component: str, state: str) -> None:
         self._identifier = identifier
         self._phase = phase
         self._circuit_component = circuit_component
@@ -166,27 +164,21 @@ class Configuration:
         self._total_analog = total_analog
         self._total_digital = total_digital
         if self._total_channels != self._total_analog + self._total_digital:
-            raise ValueError(
-                "Number of Total Channels != Analog Channels + Digital Channels"
-            )
+            msg = "Number of Total Channels != Analog Channels + Digital Channels"
+            raise ValueError(msg)
         self._analogs_order = analogs_order
         self._analogs = analogs
         self._digitals_order = digitals_order
         self._digitals = digitals
         self._frequency = dec.Decimal(frequency)
         if int(sample_rates) > 1:
-            raise NotImplementedError(
-                "COMTRADE with multiple sample rates not implemented yet"
-            )
+            msg = "COMTRADE with multiple sample rates not implemented yet"
+            raise NotImplementedError(msg)
         self._sample_rate = dec.Decimal(sample_rate)
         self._last_sample = int(last_sample)
         self._in_microseconds = len(start_datetime.split(".")[-1].strip()) > 6
-        self._start_datetime = dt.datetime.strptime(
-            start_datetime.strip(), "%d/%m/%Y,%H:%M:%S.%f"
-        )
-        self._trigger_datetime = dt.datetime.strptime(
-            trigger_datetime.strip(), "%d/%m/%Y,%H:%M:%S.%f"
-        )
+        self._start_datetime = dt.datetime.strptime(start_datetime.strip(), "%d/%m/%Y,%H:%M:%S.%f")
+        self._trigger_datetime = dt.datetime.strptime(trigger_datetime.strip(), "%d/%m/%Y,%H:%M:%S.%f")
         self._data_file_type = DataType(data_file_type)
         self._multiplication_factor = dec.Decimal(multiplication_factor)
 
@@ -270,14 +262,16 @@ class Configuration:
         return self._station_name + "_" + self._identification
 
     @classmethod
-    def load(cls: type["Configuration"], path: "PathLike[str]") -> "Configuration":
-        with open(path, "r") as cfg_file:
+    def load(cls: type["Configuration"], path: "Path") -> "Configuration":
+        with path.open() as cfg_file:
             station_name, rec_dev_id, rev_year = cfg_file.readline().split(",")
             tt, ta_string, td_string = cfg_file.readline().split(",")
             if "A" not in ta_string.upper():
-                raise ValueError(f"{ta_string} missing letter 'A'")
+                msg = f"{ta_string} missing letter 'A'"
+                raise ValueError(msg)
             if "D" not in td_string.upper():
-                raise ValueError(f"{td_string} missing letter 'D'")
+                msg = f"{td_string} missing letter 'D'"
+                raise ValueError(msg)
             ta = int(ta_string[:-1])
             td = int(td_string.strip()[:-1])
 
