@@ -1,11 +1,16 @@
 import datetime as dt
 import decimal as dec
+import logging
 from enum import Enum
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pathlib import Path
     from typing import Sequence
+
+logger = logging.getLogger(__name__)
+
+MICROSECONDS_MIN_LENGTH = 6
 
 
 class Analog:
@@ -54,7 +59,8 @@ class Analog:
         self._secondary = dec.Decimal(secondary)
         self._is_primary = primary_or_secondary.strip().lower() == "p"
 
-    def __str__(self: "Analog") -> str:
+    @property
+    def summary(self: "Analog") -> str:
         return (
             f"{self._identifier} ({self._phase}, {self._circuit_component})\n"
             f"Primary:\n > {self._is_primary} ({self._min} ~ {self._max})\n"
@@ -100,7 +106,8 @@ class Digital:
         self._circuit_component = circuit_component
         self._state = int(state)
 
-    def __str__(self: "Digital") -> str:
+    @property
+    def summary(self: "Digital") -> str:
         return (
             f"{self._identifier} ({self._phase}, {self._circuit_component})\n"
             f"State: {self._state}"
@@ -112,6 +119,7 @@ class Digital:
 
 class DataType(Enum):
     ASCII = "ASCII"
+    BINARY = "BINARY"
 
 
 class Configuration:
@@ -176,7 +184,7 @@ class Configuration:
             raise NotImplementedError(msg)
         self._sample_rate = dec.Decimal(sample_rate)
         self._last_sample = int(last_sample)
-        self._in_microseconds = len(start_datetime.split(".")[-1].strip()) > 6
+        self._in_microseconds = len(start_datetime.split(".")[-1].strip()) > MICROSECONDS_MIN_LENGTH
         self._start_datetime = dt.datetime.strptime(start_datetime.strip(), "%d/%m/%Y,%H:%M:%S.%f")
         self._trigger_datetime = dt.datetime.strptime(trigger_datetime.strip(), "%d/%m/%Y,%H:%M:%S.%f")
         self._data_file_type = DataType(data_file_type)
@@ -238,7 +246,8 @@ class Configuration:
     def last_sample(self: "Configuration") -> int:
         return self._last_sample
 
-    def __str__(self: "Configuration") -> str:
+    @property
+    def summary(self: "Configuration") -> str:
         return (
             f"Station name: {self._station_name}\n"
             f"Recording device identification: {self._identification}\n"
@@ -279,35 +288,11 @@ class Configuration:
             analogs = {}
             for _ in range(ta):
                 (
-                    _,
-                    ch_id,
-                    ph,
-                    ccbm,
-                    uu,
-                    a,
-                    b,
-                    skew,
-                    min_,
-                    max_,
-                    primary,
-                    secondary,
-                    p_or_s,
+                    _, ch_id, ph, ccbm, uu, a, b, skew,
+                    min_, max_, primary, secondary, p_or_s,
                 ) = cfg_file.readline().split(",")
                 analogs_order.append(ch_id)
-                analogs[ch_id] = Analog(
-                    ch_id,
-                    ph,
-                    ccbm,
-                    uu,
-                    a,
-                    b,
-                    skew,
-                    min_,
-                    max_,
-                    primary,
-                    secondary,
-                    p_or_s,
-                )
+                analogs[ch_id] = Analog(ch_id, ph, ccbm,uu, a, b, skew, min_, max_, primary, secondary, p_or_s)
 
             digitals_order = []
             digitals = {}
@@ -329,22 +314,6 @@ class Configuration:
             timemult = cfg_file.readline()
 
             return cls(
-                station_name,
-                rec_dev_id,
-                rev_year,
-                tt,
-                ta,
-                td,
-                analogs_order,
-                analogs,
-                digitals_order,
-                digitals,
-                lf,
-                nrates,
-                samp,
-                endsamp,
-                startdt,
-                tdt,
-                ft,
-                timemult,
+                station_name, rec_dev_id, rev_year, tt, ta, td, analogs_order, analogs, digitals_order,
+                digitals, lf, nrates, samp, endsamp, startdt, tdt, ft, timemult,
             )

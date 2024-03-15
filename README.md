@@ -6,6 +6,9 @@ Python COMTRADE reader for revision 1999.
 
 - [ ] Reader for revision 1991 and 2013.
 - [ ] Reader for BINARY, BINARY32 and FLOAT32 types.
+  - [x] BINARY
+  - [ ] BINARY32
+  - [ ] FLOAT32
 - [ ] Unit testing.
 
 ## Quickstart

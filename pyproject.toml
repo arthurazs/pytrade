@@ -1,6 +1,6 @@
 [project]
 name = "pytrade"
-version = "0.1.9"
+version = "0.1.10"
 description = "Python COMTRADE reader"
 authors = [{ name = "Arthur Zopellaro", email = "github@zope.me" }]
 readme = "README.md"
@@ -31,7 +31,7 @@ line-length = 120
 [tool.ruff.lint]
 select = ["ALL"]
 pydocstyle.convention = "google"
-# ignore = ["D102", "D105", "D107", "D101", "TD003", "FIX002", "D100"]
+# ignore = ["D102", "D105", "D107", "D101", "TD003", "FIX002", "D100", "UP035", "D103"]
 
 [tool.mypy]
 strict = true
@@ -41,4 +41,5 @@ exclude = ["build", ".venv"]
 
 [project.scripts]
 rc = 'pytrade.reader:main'
+rc-d = "pytrade.reader:debug"
 

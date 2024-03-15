@@ -1,11 +1,12 @@
 import decimal as dec
 import logging
+import sys
 from pathlib import Path
 
 from pytrade.configuration import Configuration
 from pytrade.data import Data
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(format="%(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -13,7 +14,7 @@ def plot(dat: Data) -> None:
     try:
         import matplotlib.pyplot as plt  # type: ignore[import]
     except ModuleNotFoundError:
-        print("\nmatplotlib not found\nplotting will be skipped...")
+        logger.exception("\nmatplotlib not found\nplotting will be skipped...")
         return
     import pandas as pd  # type: ignore[import]
     import seaborn as sns  # type: ignore[import]
@@ -41,9 +42,7 @@ def plot(dat: Data) -> None:
         palette=palette,
     )
 
-    _, axes = plt.subplots(
-        3, figsize=(7, 6), gridspec_kw={"height_ratios": [3, 3, 1]}
-    )
+    _, axes = plt.subplots(3, figsize=(7, 6), gridspec_kw={"height_ratios": [3, 3, 1]})
 
     sns.lineplot(
         ax=axes[0],
@@ -65,8 +64,7 @@ def plot(dat: Data) -> None:
     ax.set_yticklabels(["False", "True"])
 
     plt.subplots_adjust(left=0.12, right=0.99, top=0.99, bottom=0.1, hspace=0.01)
-    plt.savefig('figura.pdf', dpi=100, bbox_inches='tight')
-    # plt.show()
+    plt.savefig("figura.pdf", dpi=100, bbox_inches="tight")
 
 
 def main() -> int:
@@ -79,6 +77,24 @@ def main() -> int:
     plot(dat)
     return 0
 
+def debug() -> int:
+    filename = Path("data") / "pub1"
+    cfg_path = filename.with_suffix(".cfg")
+    dat_path = filename.with_suffix(".dat")
+
+    cfg = Configuration.load(cfg_path)
+    dat = Data.load(dat_path, cfg)
+
+    logger.info(cfg.summary)
+    for channel in cfg.analogs.values():
+        logger.info("%s\n", channel.summary)
+    for channel in cfg.digitals.values():
+        logger.info("%s\n", channel.summary)
+    logger.info(dat.summary)
+
+    return 0
+
 
 if __name__ == "__main__":
-    exit(main())
+    sys.exit(main())
+

@@ -1,7 +1,11 @@
 import decimal as dec
 import logging
 from dataclasses import dataclass
+from math import ceil
+from struct import unpack
 from typing import TYPE_CHECKING, NamedTuple
+
+from pytrade.configuration import DataType
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -13,6 +17,8 @@ logger = logging.getLogger(__name__)
 
 S2MS = dec.Decimal(1_000)
 S2US = S2MS * S2MS
+DIGITAL_CHANNEL_WINDOW_SIZE = 16
+LoadReturn = tuple[list[int], list["Analogs"], list["Digitals"]]
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -31,7 +37,6 @@ class ChannelsSample:
 class ChannelSample(NamedTuple):
     timestamp: dec.Decimal
     sample: dec.Decimal
-
 
 
 class Channels:
@@ -70,15 +75,14 @@ class Digitals(Channels):
         *,
         timestamp: int,
         in_microseconds: bool,
-        channels: "Sequence[str]",
-        total_analogs: int,
+        channels: "Sequence[dec.Decimal]",
         digitals_order: "Sequence[str]",
     ) -> None:
         self._timestamp = timestamp
         self._in_microseconds = in_microseconds
         self._channels = {}
         for index, channel in enumerate(digitals_order):
-            self._channels[channel] = dec.Decimal(channels[total_analogs + index])
+            self._channels[channel] = channels[index]
 
 
 class Analogs(Channels):
@@ -89,14 +93,14 @@ class Analogs(Channels):
         *,
         timestamp: int,
         in_microseconds: bool,
-        channels: "Sequence[str]",
+        channels: "Sequence[dec.Decimal]",
         analogs_order: "Sequence[str]",
     ) -> None:
         self._timestamp = timestamp
         self._in_microseconds = in_microseconds
         self._channels = {}
         for index, channel in enumerate(analogs_order):
-            self._channels[channel] = dec.Decimal(channels[index])
+            self._channels[channel] = channels[index]
 
 
 class Data:
@@ -157,6 +161,70 @@ class Data:
             f" = {len(self._digital_samples) * self._cfg.total_digital}\n"
         )
 
+    @staticmethod
+    def _load_ascii(path: "Path", cfg: "Configuration") -> LoadReturn:
+        with path.open() as dat_file:
+            timestamps = []
+            analog_samples = []
+            digital_samples = []
+            for _ in range(cfg.last_sample):
+                _, s_timestamp, *channels = dat_file.readline().split(",")
+                analog_channels = tuple(map(dec.Decimal, channels[:cfg.total_analog]))
+                digital_channels = tuple(map(bool, channels[cfg.total_analog:]))
+                timestamp = int(s_timestamp)
+
+                if cfg.total_channels != len(channels):
+                    msg = "The number of channels in .dat differs from the .cfg file"
+                    raise ValueError(msg)
+
+                timestamps.append(timestamp)
+                in_us = cfg.in_microseconds
+                analog_samples.append(Analogs(
+                    timestamp=timestamp,
+                    in_microseconds=in_us,
+                    channels=analog_channels,
+                    analogs_order=cfg.analogs_order,
+                ))
+                digital_samples.append(Digitals(
+                        timestamp=timestamp,
+                        in_microseconds=in_us,
+                        channels=digital_channels,
+                        digitals_order=cfg.digitals_order,
+                ))
+        return timestamps, analog_samples, digital_samples
+
+    @staticmethod
+    def _load_binary(path: "Path", cfg: "Configuration") -> LoadReturn:
+        with path.open(mode="rb") as dat_file:
+            timestamps = []
+            analog_samples = []
+            digital_samples = []
+            for _ in range(cfg.last_sample):
+                dat_file.read(4)  # sample number
+                timestamp = unpack("<I", dat_file.read(4))[0]
+                in_us = cfg.in_microseconds
+                analog_channels = [dec.Decimal(unpack("<h", dat_file.read(2))[0]) for _ in range(cfg.total_analog)]
+                digital_channels = []
+                ceiling = ceil(cfg.total_digital / DIGITAL_CHANNEL_WINDOW_SIZE)
+                for index in range(1, ceiling + 1):
+                    digitals = unpack("<H", dat_file.read(2))[0]
+                    bits = (
+                        DIGITAL_CHANNEL_WINDOW_SIZE if index < ceiling else
+                        (index * DIGITAL_CHANNEL_WINDOW_SIZE) - cfg.total_digital
+                    )
+                    for bit in range(bits):
+                        digital_channels.append(bool((digitals >> bit) & 1))
+                timestamps.append(timestamp)
+                analog_samples.append(Analogs(
+                    timestamp=timestamp, in_microseconds=in_us,
+                    channels=analog_channels, analogs_order=cfg.analogs_order,
+                ))
+                digital_samples.append(Digitals(
+                    timestamp=timestamp, in_microseconds=in_us,
+                    channels=digital_channels, digitals_order=cfg.digitals_order,
+                ))
+        return timestamps, analog_samples, digital_samples
+
     @classmethod
     def load(cls: type["Data"], path: "Path", cfg: "Configuration") -> "Data":
         """Loads .dat file. Expects a .cfg object.
@@ -171,31 +239,12 @@ class Data:
         Raises:
             ValueError: If the number of channels in .dat differs from .cfg.
         """
-        with path.open() as dat_file:
-            timestamps = []
-            analog_samples = []
-            digital_samples = []
-            for _ in range(cfg.last_sample):
-                _, s_timestamp, *channels = dat_file.readline().split(",")
-                timestamp = int(s_timestamp)
-
-                if cfg.total_channels != len(channels):
-                    msg = "The number of channels in .dat differs from the .cfg file"
-                    raise ValueError(msg)
-
-                timestamps.append(timestamp)
-                in_us = cfg.in_microseconds
-                analog_samples.append(Analogs(
-                    timestamp=timestamp,
-                    in_microseconds=in_us,
-                    channels=channels,
-                    analogs_order=cfg.analogs_order,
-                ))
-                digital_samples.append(Digitals(
-                        timestamp=timestamp,
-                        in_microseconds=in_us,
-                        channels=channels,
-                        total_analogs=cfg.total_analog,
-                        digitals_order=cfg.digitals_order,
-                ))
-            return cls(timestamps, analog_samples, digital_samples, cfg)
+        match cfg.data_file_type:
+            case DataType.ASCII:
+                timestamps, analog_samples, digital_samples = cls._load_ascii(path, cfg)
+            case DataType.BINARY:
+                timestamps, analog_samples, digital_samples = cls._load_binary(path, cfg)
+            case default:
+                msg = f"Unknown {default} file type for .dat COMTRADE"
+                raise TypeError(msg)
+        return cls(timestamps, analog_samples, digital_samples, cfg)
