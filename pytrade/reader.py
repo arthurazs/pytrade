@@ -12,12 +12,12 @@ logger = logging.getLogger(__name__)
 
 def plot(dat: Data) -> None:
     try:
-        import matplotlib.pyplot as plt  # type: ignore[import]
+        import matplotlib.pyplot as plt
     except ModuleNotFoundError:
         logger.exception("\nmatplotlib not found\nplotting will be skipped...")
         return
-    import pandas as pd  # type: ignore[import]
-    import seaborn as sns  # type: ignore[import]
+    import pandas as pd
+    import seaborn as sns
 
     channels = {
         "current": ("IAW", "IBW", "ICW"),
