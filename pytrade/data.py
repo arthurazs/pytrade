@@ -135,6 +135,17 @@ class Data:
             string += f"\t{digital.timestamp}: {digital.samples}\n"
         return string
 
+    def get_analogs(self: "Data", channels: "Sequence[str]") -> "Iterator[Sequence[dec.Decimal]]":
+        factor = self.cfg.multiplication_factor
+        for samples in self._analog_samples:
+            selected_samples: list[dec.Decimal] = []
+            # TODO @arthurazs: Add support to get ALL channels
+            for channel in channels:
+                convert = self.cfg.analogs[channel].convert
+                selected_samples.append(convert(samples[channel]))
+            # TODO @arthurazs: Improve return typing
+            yield samples.convert_timestamp(factor), *selected_samples
+
     def get_analogs_by(self: "Data", item: str) -> "Iterator[ChannelSample]":
         convert_analog = self.cfg.analogs[item].convert
         factor = self.cfg.multiplication_factor
@@ -212,8 +223,7 @@ class Data:
                         DIGITAL_CHANNEL_WINDOW_SIZE if index < ceiling else
                         (index * DIGITAL_CHANNEL_WINDOW_SIZE) - cfg.total_digital
                     )
-                    for bit in range(bits):
-                        digital_channels.append(bool((digitals >> bit) & 1))
+                    digital_channels = [bool((digitals >> bit) & 1) for bit in range(bits)]
                 timestamps.append(timestamp)
                 analog_samples.append(Analogs(
                     timestamp=timestamp, in_microseconds=in_us,
