@@ -223,7 +223,7 @@ class Data:
                         DIGITAL_CHANNEL_WINDOW_SIZE if index < ceiling else
                         (index * DIGITAL_CHANNEL_WINDOW_SIZE) - cfg.total_digital
                     )
-                    digital_channels = [bool((digitals >> bit) & 1) for bit in range(bits)]
+                    digital_channels.extend([bool((digitals >> bit) & 1) for bit in range(bits)])
                 timestamps.append(timestamp)
                 analog_samples.append(Analogs(
                     timestamp=timestamp, in_microseconds=in_us,
