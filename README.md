@@ -9,6 +9,10 @@ Python COMTRADE reader for revision 1999.
   - [x] BINARY
   - [ ] BINARY32
   - [ ] FLOAT32
+- [ ] get_analog
+  - [ ] primary
+  - [ ] secondary
+  - [x] default
 - [ ] Unit testing.
 
 ## Quickstart
