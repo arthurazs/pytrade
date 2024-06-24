@@ -3,6 +3,7 @@ import logging
 import sys
 from pathlib import Path
 
+from pytrade.comtrade import Comtrade
 from pytrade.configuration import Configuration
 from pytrade.data import Data
 
@@ -10,7 +11,7 @@ logging.basicConfig(format="%(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def plot(dat: Data) -> None:
+def plot(comtrade: "Comtrade") -> None:
     try:
         import matplotlib.pyplot as plt
     except ModuleNotFoundError:
@@ -19,6 +20,7 @@ def plot(dat: Data) -> None:
     import pandas as pd
     import seaborn as sns
 
+    dat = comtrade.dat
     channels = {
         "current": ("IAW", "IBW", "ICW"),
         "voltage": ("VAY", "VBY", "VCY"),
@@ -72,9 +74,8 @@ def main() -> int:
     cfg_path = filename.with_suffix(".CFG")
     dat_path = filename.with_suffix(".DAT")
 
-    cfg = Configuration.load(cfg_path)
-    dat = Data.load(dat_path, cfg)
-    plot(dat)
+    comtrade = Comtrade.load(cfg_path, dat_path)
+    plot(comtrade)
     return 0
 
 def debug() -> int:
@@ -82,8 +83,9 @@ def debug() -> int:
     cfg_path = filename.with_suffix(".cfg")
     dat_path = filename.with_suffix(".dat")
 
-    cfg = Configuration.load(cfg_path)
-    dat = Data.load(dat_path, cfg)
+    comtrade = Comtrade(cfg_path, dat_path)
+    cfg = comtrade.cfg
+    dat = comtrade.dat
 
     logger.info(cfg.summary)
     for channel in cfg.analogs.values():
